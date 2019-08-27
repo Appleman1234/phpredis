@@ -459,11 +459,23 @@ PS_OPEN_FUNC(redis)
 
             RedisSock *redis_sock;
             if (url->host) {
+	        char host[1024] = {0};
+		const char *fmtstr = "%s://%s";
+		if (url->scheme){
 #if (PHP_VERSION_ID < 70300)
-                redis_sock = redis_sock_create(url->host, strlen(url->host), url->port, timeout, read_timeout, persistent, persistent_id, retry_interval);
+		    snprintf(host, sizeof(host), fmtstr, url->scheme, url->host);
 #else
-                redis_sock = redis_sock_create(ZSTR_VAL(url->host), ZSTR_LEN(url->host), url->port, timeout, read_timeout, persistent, persistent_id, retry_interval);
+		    snprintf(host, sizeof(host), fmtstr, ZSTR_VAL(url->scheme), ZSTR_VAL(url->host));
 #endif
+		} else {
+#if (PHP_VERSION_ID < 70300)
+		    fmtstr = "%s";
+		    snprintf(host, sizeof(host), fmtstr, url->host);
+#else
+		    snprintf(host, sizeof(host), fmtstr, ZSTR_VAL(url->host));
+#endif
+		}
+                redis_sock = redis_sock_create(host, strlen(host), url->port, timeout, read_timeout, persistent, persistent_id, retry_interval);
             } else { /* unix */
 #if (PHP_VERSION_ID < 70300)
                 redis_sock = redis_sock_create(url->path, strlen(url->path), 0, timeout, read_timeout, persistent, persistent_id, retry_interval);
